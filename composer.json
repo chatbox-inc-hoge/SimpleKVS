@@ -1,7 +1,7 @@
 {
-    "name": "chatbox/silane",
+    "name": "chatbox/simpleKVS",
     "type": "project",
-    "description" : "silane - silex based framework component",
+    "description" : "simple scalable KVS",
     "keywords": [],
     "license": "MIT",
     "repositories": [
@@ -9,11 +9,11 @@
     "require": {
         "php": ">=5.4",
         "chatbox/phputil": "dev-master",
-        "silex/silex": "@stable"
+        "illuminate/database": "@stable"
     },
     "autoload":{
         "psr-4":{
-            "Chatbox\\Silane\\":"src/"
+            "Chatbox\\SimpleKVS\\":"src/"
         }
     },
     "minimum-stability": "dev"
