@@ -1,5 +1,5 @@
 {
-    "name": "chatbox/simpleKVS",
+    "name": "chatbox/simple-kvs",
     "type": "project",
     "description" : "simple scalable KVS",
     "keywords": [],
