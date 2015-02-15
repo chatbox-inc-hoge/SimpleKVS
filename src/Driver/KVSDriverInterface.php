@@ -16,6 +16,11 @@ interface KVSDriverInterface {
      */
     public function get($key);
 
+    /**
+     * @param $key
+     * @param $value
+     * @return \Chatbox\SimpleKVS\Model
+     */
     public function set($key,$value);
 
     public function update($key,$value);

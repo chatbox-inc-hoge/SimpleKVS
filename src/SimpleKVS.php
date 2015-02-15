@@ -28,6 +28,10 @@ class SimpleKVS {
         $this->driver = $driver;
     }
 
+    /**
+     * @param $key
+     * @return Model
+     */
     public function get($key){
         return $this->driver->get($key);
     }

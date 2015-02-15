@@ -30,32 +30,37 @@ class SimpleDB implements KVSDriverInterface{
     }
 
     /**
+     * @param $config
      * @return \Illuminate\Database\Connection
      */
     protected function getConnection($config){
-        $dbConfig = \Chatbox\Arr::get($config,"database",[]);
-        $capsule = new Capsule;
-        $capsule->addConnection($dbConfig);
-        return $capsule->getConnection();
+        $dbConfig = \Chatbox\Arr::get($config,"database",null);
+        if($dbConfig){
+            $capsule = new Capsule;
+            $capsule->addConnection($dbConfig);
+            return $capsule->getConnection();
+        }else{
+            return Capsule::connection();
+        }
     }
 
     public function get($key)
     {
 //        $this->connection->enableQueryLog();
         $builder = $this->getBuilder();
-        $builder->select("*")->where("key",$key);
+        $builder->select("*")->where("key","=",$key);
 //        $builder->where("created_at","<",time());
         $builder->where("deleted_at",null);
         $result = $builder->first();
 //        var_dump($result,$this->connection->getQueryLog());exit;
         if($result){
             $model = new \Chatbox\SimpleKVS\Model($result["key"],$result["value"]);
-            $this->getBuilder()->update([
-                "accessed_at" => time(),
-            ])->where("key",$model->getKey());
+            $this->getBuilder()->where("key",$model->getKey())->update([
+                "accessed_at" => date("Y-m-d H:i:s"),
+            ]);
             return $model;
         }else{
-            throw new \Exception("cant find value with the key");
+            throw new \Exception("cant find value with the key $key");
         }
     }
 
@@ -65,24 +70,25 @@ class SimpleDB implements KVSDriverInterface{
         $this->getBuilder()->insert([
             "key" => $key,
             "value" => $value,
-            "created_at" => time(),
-            "updated_at" => time(),
-            "access_at" => null,
+            "created_at" => date("Y-m-d H:i:s"),
+            "updated_at" => date("Y-m-d H:i:s"),
+            "accessed_at" => date("Y-m-d H:i:s"),
             "deleted_at" => null,
         ]);
+        return $key;
     }
 
     public function update($key,$value){
         is_array($value) && ($value = json_encode($value));
         $this->getBuilder()->update([
             "value" => $value,
-            "updated_at" => time(),
+            "updated_at" => date("Y-m-d H:i:s"),
         ])->where("key",$key);
     }
 
     public function delete($key){
         $this->getBuilder()->update([
-            "deleted_at" => time()
+            "deleted_at" => date("Y-m-d H:i:s")
         ])->where("key",$key);
     }
 
