@@ -6,13 +6,13 @@ namespace Chatbox\SimpleKVS\Driver;
  * Date: 2015/02/11
  * Time: 21:53
  */
+use Chatbox\SimpleKVS\Model;
 
 interface KVSDriverInterface {
 
     /**
      * @param $key
      * @return \Chatbox\SimpleKVS\Model
-     * @throw \Exception
      */
     public function get($key);
 
@@ -21,9 +21,19 @@ interface KVSDriverInterface {
      * @param $value
      * @return \Chatbox\SimpleKVS\Model
      */
-    public function set($key,$value);
+    public function set(Model $model);
 
-    public function update($key,$value);
+    /**
+     * @param $key
+     * @param $value
+     * @return \Chatbox\SimpleKVS\Model
+     */
+    public function update(Model $model);
 
-    public function delete($key);
+    /**
+     * @param $key
+     * @param $value
+     * @return \Chatbox\SimpleKVS\Model
+     */
+    public function delete(Model $model);
 }

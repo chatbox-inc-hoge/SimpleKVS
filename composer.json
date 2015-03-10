@@ -8,8 +8,7 @@
     ],
     "require": {
         "php": ">=5.4",
-        "chatbox/phputil": "dev-master",
-        "illuminate/database": "@stable"
+        "chatbox/phputil": "dev-master"
     },
     "autoload":{
         "psr-4":{

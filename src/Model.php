@@ -8,7 +8,11 @@
 
 namespace Chatbox\SimpleKVS;
 
-
+/**
+ * Class Model
+ * KVSに提供可能な形のデータを構成刷ることに注力するスコープ
+ * @package Chatbox\SimpleKVS
+ */
 class Model{
 
     protected $key;
@@ -22,8 +26,8 @@ class Model{
      */
     function __construct($key,$value)
     {
-        $this->key = $key;
-        $this->value = $value;
+        $this->setKey($key);
+        $this->setValue($value);
     }
 
     public function getKey(){
@@ -34,11 +38,19 @@ class Model{
         return $this->value;
     }
 
-    public function get($key,$value){
-        return \Chatbox\Arr::get($this->getArrayValue(),$key,$value);
+    public function setKey($key){
+        if(is_string($key)){
+            $this->key = $key;
+        }else{
+            throw new \DomainException("key must be string");
+        }
     }
 
-    public function getArrayValue(){
-        return json_decode($this->value,true)?:[];
+    public function setValue($value){
+        if(is_string($value)){
+            $this->value = $value;
+        }else{
+            throw new \DomainException("value must be string");
+        }
     }
-} 
+}

@@ -6,8 +6,7 @@
 
 - ドライバベースでストレージの種別を問わず使えるKVSモデル。
 - データCRUDの抽象化。CRUD4種は一通り対応する。
-- スケーラビリティを確保したくても、リーンスタートでRedisは冗長なので、
- 　それ的な機能をDBで仮モック運用しつつ、あとで何とか的なやつ。
+- 直列化については考えない。SerializeとかJSONとか考えてたらInterfaceが冗長になる。
 
 ### 対象
 
@@ -16,19 +15,31 @@
 - 揮発性データ群。
 - 個々のデータ属性に応じた細かいKPIが不要な物。
 
+- スケーラビリティを確保したくても、リーンスタートでRedisは冗長なので、
+ 　それ的な機能をDBで仮モック運用しつつ、あとで何とか的なやつ。
+
 ### ドライバの種類
 
 必要に応じて追加していく
 
-- DB
+- DB(Eloquent) : Redis ライクに有効期限のサポート。論理削除
 
-## Databaseドライバの種類
+## Usage
 
-- 揮発データサポート
-  - 有効期限:作成からxxx秒 最終アクセスからxxx秒
-- 論理削除
+````
 
-## スキーマ変更
+$driver = new SimpleDB($config);
 
-- expiered_at 不要
+$kvs = new SimpleKVS($driver);
 
+$model = $kvs->fetch($key);
+
+echo $model->getKey();
+echo $model->getValue();
+
+$newValue = $kvs->set($newKey,$newValue);
+
+$model->update($brandNewValue);
+$model->delete();
+
+````

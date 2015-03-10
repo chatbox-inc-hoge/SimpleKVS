@@ -9,87 +9,105 @@
 namespace Chatbox\SimpleKVS\Driver;
 
 use Illuminate\Database\Capsule\Manager as Capsule;
+use Chatbox\SimpleKVS\Model;
+use Chatbox\Arr;
+
+use \Illuminate\Database\Schema\Blueprint;
 
 class SimpleDB implements KVSDriverInterface{
+
+    static public function schema(){
+        return function(Blueprint $blueprint){
+            $blueprint->string("key");
+            $blueprint->text("value");
+            $blueprint->timestamp("created_at");
+            $blueprint->timestamp("updated_at");
+            $blueprint->timestamp("deleted_at")->nullable();
+        };
+    }
 
     /**
      * @var \Illuminate\Database\Connection;
      */
     protected $connection;
-
     protected $table;
-
-    protected $expiredIn = 3000;
-
-    protected $updateOnAccess = false;
-
-    function __construct(array $config)
-    {
-        $this->connection = $this->getConnection($config);
-        $this->table = \Chatbox\Arr::get($config,"table");
-    }
+    protected $expiredIn;
+    protected $updateOnAccess;
 
     /**
-     * @param $config
-     * @return \Illuminate\Database\Connection
+     * time offset for test
+     * @var int
      */
-    protected function getConnection($config){
-        $dbConfig = \Chatbox\Arr::get($config,"database",null);
-        if($dbConfig){
-            $capsule = new Capsule;
-            $capsule->addConnection($dbConfig);
-            return $capsule->getConnection();
-        }else{
-            return Capsule::connection();
-        }
+    protected $timeOffset = null;
+
+    function __construct($config)
+    {
+        $this->connection = Capsule::connection();
+
+        $this->table = Arr::get($config,"table",function(){
+            throw new \DomainException("you should set tablename");
+        });
+        $this->expiredIn = (int) Arr::get($config,"expiredIn",3000);
+        $this->updateOnAccess = (bool)Arr::get($config,"updateOnAccess",false);
     }
+
+//    /**
+//     * @param $config
+//     * @return \Illuminate\Database\Connection
+//     */
+//    protected function getConnection($config){
+//        $dbConfig = \Chatbox\Arr::get($config,"database",null);
+//        if($dbConfig){
+//            $capsule = new Capsule;
+//            $capsule->addConnection($dbConfig);
+//            return $capsule->getConnection();
+//        }else{
+//            return ;
+//        }
+//    }
 
     public function get($key)
     {
-//        $this->connection->enableQueryLog();
         $builder = $this->getBuilder();
         $builder->select("*")->where("key","=",$key);
-//        $builder->where("created_at","<",time());
+        $builder->where("updated_at","<",$this->getTime());
         $builder->where("deleted_at",null);
         $result = $builder->first();
-//        var_dump($result,$this->connection->getQueryLog());exit;
         if($result){
-            $model = new \Chatbox\SimpleKVS\Model($result["key"],$result["value"]);
-            $this->getBuilder()->where("key",$model->getKey())->update([
-                "accessed_at" => date("Y-m-d H:i:s"),
-            ]);
+            $model = new Model($result["key"],$result["value"]);
+            $this->updateOnAccess && $this->update($model);
             return $model;
         }else{
-            throw new \Exception("cant find value with the key $key");
+            return null;
         }
     }
 
-    public function set($key,$value)
+    public function set(Model $model)
     {
-        is_array($value) && ($value = json_encode($value));
+        $time = $this->getTime();
         $this->getBuilder()->insert([
-            "key" => $key,
-            "value" => $value,
-            "created_at" => date("Y-m-d H:i:s"),
-            "updated_at" => date("Y-m-d H:i:s"),
-            "accessed_at" => date("Y-m-d H:i:s"),
+            "key" => $model->getKey(),
+            "value" => $model->getValue(),
+            "created_at" => $time,
+            "updated_at" => $time,
             "deleted_at" => null,
         ]);
-        return $key;
+        return $model;
     }
 
-    public function update($key,$value){
-        is_array($value) && ($value = json_encode($value));
+    public function update(Model $model){
         $this->getBuilder()->update([
-            "value" => $value,
-            "updated_at" => date("Y-m-d H:i:s"),
-        ])->where("key",$key);
+            "value" => $model->getValue(),
+            "updated_at" => $this->getTime(),
+        ])->where("key",$model->getKey());
     }
 
-    public function delete($key){
+    public function delete(Model $model){
+        $time = $this->getTime();
         $this->getBuilder()->update([
-            "deleted_at" => date("Y-m-d H:i:s")
-        ])->where("key",$key);
+            "updated_at" => $time,
+            "deleted_at" => $time
+        ])->where("key",$model->getKey());
     }
 
     /**
@@ -97,6 +115,18 @@ class SimpleDB implements KVSDriverInterface{
      */
     protected function getBuilder(){
         return $this->connection->table($this->table);
+    }
+
+    protected function getTime($fomat = "Y-m-d H:i:s"){
+        $time = time();
+        if($this->timeOffset){
+            $time = $time - $this->timeOffset;
+        }
+        return date($fomat);
+    }
+
+    protected function setTime($offset){
+        $this->timeOffset = $offset;
     }
 
 } 
